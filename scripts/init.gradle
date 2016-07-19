@@ -1,0 +1,189 @@
+// ./gradlew --init-script init.gradle clean
+
+gradle.addBuildListener(new BuildListener() {
+    @Override
+    void buildStarted(Gradle gradle) {
+        gradle.println "buildStarted ${gradle}"
+    }
+
+    @Override
+    void settingsEvaluated(Settings settings) {
+        gradle.println "settingsEvaluated ${settings}"
+    }
+
+    @Override
+    void projectsLoaded(Gradle gradle) {
+        gradle.println "projectsLoaded ${gradle}"
+    }
+
+    /**
+     * 配置阶段结束
+     * @param gradle The build which has been evaluated. Never null.
+     */
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+        gradle.println "projectsEvaluated ${gradle}"
+    }
+
+    /**
+     * 构建结束时调用
+     * @param result The result of the build. Never null.
+     */
+    @Override
+    void buildFinished(BuildResult result) {
+        gradle.println "buildFinished result=>${result.failure == null}"
+    }
+})
+
+gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
+    @Override
+    void beforeEvaluate(Project project) {
+        gradle.println "beforeEvaluate ${project}"
+
+    }
+
+    @Override
+    void afterEvaluate(Project project, ProjectState state) {
+        gradle.println "afterEvaluate ${project} ${state}"
+
+    }
+})
+
+gradle.println "${gradle.gradleHomeDir}"
+gradle.println "${gradle.gradleUserHomeDir}"
+gradle.println "${gradle.gradleVersion}"
+gradle.println "${gradle.startParameter}"
+gradle.println "${gradle.taskGraph}"
+
+
+gradle.buildStarted {
+    gradle.println "=====buildStarted====="
+}
+gradle.buildFinished {
+    gradle.println "=====buildFinished====="
+}
+gradle.beforeProject {
+    gradle.println "=====beforeProject====="
+}
+gradle.afterProject {
+    gradle.println "=====afterProject====="
+}
+gradle.projectsEvaluated {
+    gradle.println "=====projectsEvaluated====="
+}
+gradle.projectsLoaded {
+    gradle.println "=====projectsLoaded====="
+}
+gradle.settingsEvaluated {
+    gradle.println "=====settingsEvaluated====="
+}
+
+gradle.addListener(new TaskExecutionGraphListener() {
+
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "=====${graph}====="
+    }
+})
+
+gradle.addListener(new TaskExecutionListener() {
+
+    @Override
+    void beforeExecute(Task task) {
+        gradle.println "beforeExecute:=====${task}====="
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        gradle.println "afterExecute:=====${task} ${state}====="
+
+    }
+})
+
+gradle.addListener(new TaskActionListener() {
+
+    @Override
+    void beforeActions(Task task) {
+        gradle.println "beforeActions:=====${task}====="
+    }
+
+    @Override
+    void afterActions(Task task) {
+        gradle.println "afterActions:=====${task}====="
+    }
+})
+
+
+gradle.addListener(new TestListener() {
+
+    @Override
+    void beforeSuite(TestDescriptor suite) {
+        gradle.println "beforeSuite:=====${suite}====="
+
+    }
+
+    @Override
+    void afterSuite(TestDescriptor suite, TestResult result) {
+        gradle.println "afterSuite:=====${suite} ${result}====="
+
+    }
+
+    @Override
+    void beforeTest(TestDescriptor testDescriptor) {
+        gradle.println "beforeTest:=====${testDescriptor}====="
+
+    }
+
+    @Override
+    void afterTest(TestDescriptor testDescriptor, TestResult result) {
+        gradle.println "afterTest:=====${testDescriptor} ${result}====="
+    }
+})
+
+gradle.addListener(new DependencyResolutionListener() {
+
+    @Override
+    void beforeResolve(ResolvableDependencies dependencies) {
+        gradle.println "beforeResolve:=====${dependencies}====="
+
+    }
+
+    @Override
+    void afterResolve(ResolvableDependencies dependencies) {
+        gradle.println "afterResolve:=====${dependencies}====="
+    }
+})
+
+
+
+
+gradle.addListener(new StandardOutputListener() {
+    static File logFile = new File("log.txt");
+    static {
+        if (logFile.exists()){
+            logFile.delete()
+        }
+        logFile.createNewFile()
+    }
+
+    @Override
+    void onOutput(CharSequence output) {
+        try {
+            FileWriter writer = new FileWriter(logFile, true);
+            writer.write(output.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+})
+gradle.addListener(new TestOutputListener() {
+
+    @Override
+    void onOutput(TestDescriptor testDescriptor, TestOutputEvent outputEvent) {
+        gradle.println "onOutput:=====${testDescriptor} ${outputEvent}====="
+
+    }
+})
+
+
