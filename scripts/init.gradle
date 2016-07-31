@@ -389,3 +389,49 @@ initscript {
     }
 }
 println Fraction.ONE_FIFTH.multiply(2)
+
+
+//对于一些仓库的全局定义，也可以使用插件的方式定义，如
+
+
+apply plugin: EnterpriseRepositoryPlugin
+
+class EnterpriseRepositoryPlugin implements Plugin<Gradle> {
+    private static String REPOSITORY_URL = "htttp://url/to/maven"
+
+    void apply(Gradle gradle) {
+        gradle.allprojects { project ->
+            project.buildscript {
+                repositories {
+                    maven {
+                        url REPOSITORY_URL
+                    }
+                    jcenter()
+                    mavenCentral()
+                    mavenLocal()
+                }
+                dependencies {
+                    //可以定义全局的android gradle插件
+                    classpath 'com.android.tools.build:gradle:2.1.2'
+                }
+            }
+            project.repositories {
+                maven {
+                    url REPOSITORY_URL
+                }
+                jcenter()
+                mavenCentral()
+                mavenLocal()
+            }
+            project.configurations.all {
+                resolutionStrategy {
+                    // cache dynamic versions for 10 minutes
+                    cacheDynamicVersionsFor 10 * 60, TimeUnit.SECONDS
+                    // don't cache changing modules at all
+                    cacheChangingModulesFor 0, TimeUnit.SECONDS
+                }
+            }
+        }
+    }
+}
+
