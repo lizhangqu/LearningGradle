@@ -57,6 +57,14 @@ gradle.taskGraph.addTaskExecutionListener(new TaskExecutionListener() {
     }
 })
 
+//获得root project
+gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "========${gradle.rootProject}========"
+    }
+})
+
 //构建监听
 gradle.addBuildListener(new BuildListener() {
     @Override
