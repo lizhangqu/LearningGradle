@@ -372,3 +372,20 @@ allprojects { Project project ->
         }
     }
 }
+
+//如果需要在init.gradle中引入第三方库，可以使用initscript指定仓库地址和对应的依赖
+//比如使用apache的commons-math库进行计算1/5 * 2的值
+//下面的脚步会输出2/5
+import org.apache.commons.math.fraction.Fraction
+
+initscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.apache.commons:commons-math:2.0'
+    }
+}
+println Fraction.ONE_FIFTH.multiply(2)
