@@ -1,1 +1,437 @@
-###Gradle系列之从init.gradle说起
+//init.gradle的作用
+//建立企业内部的配置,如定义在哪里可以找到自定义插件
+//属性配置,比如配置持续集成服务器的地址等配置。
+//提供构建需要的用户的个人信息,如仓库或数据库的身份验证凭证。
+//定义机器的一些细节,比如jdk安装在什么位置。
+//注册一些监听器。比如注册监听器，监听Gradle事件的发生，做一些额外的操作，例如日志的重定向。
+//注册日志。这样我们就可以自定义如何输出gradle产生的日志信息。
+
+//加载优先级,依次加载以下目录下的文件，如果一个目录下多个文件被找到，按照英文字母顺序执行
+//1.通过 -I 或者 --init-script 参数指定路径
+//2.加载USER_HOME/.gradle/init.gradle文件
+//3.加载USER_HOME/.gradle/init.d/目录下的以.gradle结尾的文件
+//4.加载GRADLE_HOME/init.d/目录下的以.gradle结尾的文件
+
+
+//命令行加载方式
+// gradle --init-script init.gradle assembleDebug
+// gradle --I init.gradle assembleDebug
+
+
+//gradle的可执行目录
+gradle.println "gradleHomeDir:${gradle.gradleHomeDir}"
+//gradle的用户目录,用于缓存一些下载好的资源,编译好的构建脚本等
+gradle.println "gradleUserHomeDir:${gradle.gradleUserHomeDir}"
+//gradle的版本号
+gradle.println "gradleVersion:${gradle.gradleVersion}"
+//gralde当前构建的启动参数
+gradle.println "startParameter:${gradle.startParameter}"
+
+//当前构建的任务依赖关系图
+gradle.taskGraph.whenReady {
+    TaskExecutionGraph taskGraph ->
+        taskGraph.allTasks.each {
+            Task task ->
+                gradle.println "=========whenReady:taskGraph:${task.getName()}========="
+        }
+        taskGraph.beforeTask {
+            Task task ->
+                gradle.println "=========whenReady:beforeTask:${task.getName()}========="
+        }
+        taskGraph.afterTask {
+            Task task ->
+                gradle.println "=========whenReady:afterTask:${task.getName()}========="
+        }
+}
+//等同于上面的whenReady闭包中的内容
+gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "=========TaskExecutionGraphListener:graphPopulated========="
+        graph.allTasks.each {
+            Task task ->
+                gradle.println "=========TaskExecutionGraph:${task.getName()}========="
+        }
+    }
+})
+//等同于上面的whenReady闭包中的内容
+gradle.taskGraph.addTaskExecutionListener(new TaskExecutionListener() {
+    @Override
+    void beforeExecute(Task task) {
+        gradle.println "=========TaskExecutionListener:beforeExecute:${task.getName()}========="
+
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        gradle.println "=========TaskExecutionListener:afterExecute:${task.getName()}========="
+        gradle.println "=========TaskState:[executed]${state.executed}========="
+        gradle.println "=========TaskState:[didWork]${state.didWork}========="
+        gradle.println "=========TaskState:[failure]${state.failure}========="
+        gradle.println "=========TaskState:[skipMessage]${state.skipMessage}========="
+        gradle.println "=========TaskState:[skipped]${state.skipped}========="
+        gradle.println "=========TaskState:[upToDate]${state.upToDate}========="
+    }
+})
+
+//获得root project
+gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "========${gradle.rootProject}========"
+    }
+})
+
+//构建监听
+gradle.addBuildListener(new BuildListener() {
+    @Override
+    void buildStarted(Gradle gradle) {
+        //init.gradle被执行前,构建已经发生,且buildStarted已经被回调,
+        // 因此后续加入的BuildListener都不会再调用buildStarted
+        gradle.println("=========BuildListener:buildStarted=========")
+    }
+
+    @Override
+    void settingsEvaluated(Settings settings) {
+        //setting.gradle加载和评估配置阶段完成
+        gradle.println("=========BuildListener:settingsEvaluated=========")
+    }
+
+    @Override
+    void projectsLoaded(Gradle gradle) {
+        //项目加载完成
+        gradle.println("=========BuildListener:projectsLoaded=========")
+    }
+
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+        //项目评估配置阶段结束
+        gradle.println("=========BuildListener:projectsEvaluated=========")
+    }
+
+    @Override
+    void buildFinished(BuildResult result) {
+        //构建完成
+        gradle.println("=========BuildListener:buildFinished=========")
+    }
+})
+
+//配置评估监听
+gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
+    @Override
+    void beforeEvaluate(Project project) {
+        //项目配置评估前回调
+        gradle.println("=========ProjectEvaluationListener:beforeEvaluate ${project.getName()}=========")
+    }
+
+    @Override
+    void afterEvaluate(Project project, ProjectState state) {
+        //项目配置评估后回调
+        //如果失败,则failure不为null
+        gradle.println("=========ProjectEvaluationListener:afterEvaluate ${state.executed} ${state.failure}=========")
+    }
+})
+
+/**
+ * 同上BuildListener和ProjectEvaluationListener
+ */
+gradle.buildStarted {
+    gradle.println "=========buildStarted========="
+}
+gradle.settingsEvaluated {
+    gradle.println "=========settingsEvaluated========="
+}
+gradle.projectsLoaded {
+    gradle.println "=========projectsLoaded========="
+}
+gradle.projectsEvaluated {
+    gradle.println "=========projectsEvaluated========="
+}
+gradle.buildFinished {
+    gradle.println "=========buildFinished========="
+}
+gradle.beforeProject {
+    gradle.println "=========beforeProject========="
+}
+gradle.afterProject {
+    gradle.println "=========afterProject========="
+}
+
+/**
+ * 一系列的Listener
+ */
+
+//等同gradle.taskGraph.addTaskExecutionGraphListener
+gradle.addListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "=========from gradle.addListener graphPopulated========="
+        graph.allTasks.each {
+            Task task ->
+                gradle.println "=========TaskExecutionGraph:${task.getName()}========="
+        }
+    }
+})
+//等同gradle.taskGraph.addTaskExecutionListener
+gradle.addListener(new TaskExecutionListener() {
+    @Override
+    void beforeExecute(Task task) {
+        gradle.println "=========from gradle.addListener beforeExecute========="
+        gradle.println "=========TaskExecutionListener:beforeExecute:${task.getName()}========="
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        gradle.println "=========from gradle.addListener afterExecute========="
+        gradle.println "=========TaskExecutionListener:afterExecute:${task.getName()}========="
+        gradle.println "=========TaskState:[executed]${state.executed}========="
+        gradle.println "=========TaskState:[didWork]${state.didWork}========="
+        gradle.println "=========TaskState:[failure]${state.failure}========="
+        gradle.println "=========TaskState:[skipMessage]${state.skipMessage}========="
+        gradle.println "=========TaskState:[skipped]${state.skipped}========="
+        gradle.println "=========TaskState:[upToDate]${state.upToDate}========="
+    }
+})
+
+//依赖监听
+gradle.addListener(new DependencyResolutionListener() {
+
+    @Override
+    void beforeResolve(ResolvableDependencies dependencies) {
+        gradle.println "DependencyResolutionListener:beforeResolve:=====${dependencies}====="
+    }
+
+    @Override
+    void afterResolve(ResolvableDependencies dependencies) {
+        gradle.println "DependencyResolutionListener:afterResolve:=====${dependencies}====="
+    }
+})
+
+//log输出的监听,可以将log输出到其他文件中去
+gradle.addListener(new StandardOutputListener() {
+    static File logFile = new File("log.txt");
+    static {
+        if (logFile.exists()) {
+            logFile.delete()
+        }
+        logFile.createNewFile()
+    }
+
+    @Override
+    void onOutput(CharSequence output) {
+        try {
+            FileWriter writer = new FileWriter(logFile, true);
+            writer.write(output.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+})
+
+//TaskAction监听器,Task.doFirst,Task.doLast等传入的闭包都是Action
+gradle.addListener(new TaskActionListener() {
+    @Override
+    void beforeActions(Task task) {
+        //在所有action执行前回调
+        gradle.println "**********beforeActions:${task}**********"
+        task.getActions().each {
+            Action action ->
+                gradle.println "**********${action}**********"
+        }
+    }
+
+    @Override
+    void afterActions(Task task) {
+        //在所有action执行后回调
+        gradle.println "**********afterActions:${task}**********"
+        task.getActions().each {
+            Action action ->
+                gradle.println "**********${action}**********"
+        }
+    }
+})
+
+
+
+//测试监听器
+gradle.addListener(new TestListener() {
+    @Override
+    void beforeSuite(TestDescriptor suite) {
+        gradle.println "beforeSuite:=====${suite.className} ${suite.name}====="
+    }
+
+    @Override
+    void afterSuite(TestDescriptor suite, TestResult result) {
+        gradle.println "afterSuite:=====${suite.className} ${suite.name} ${result}====="
+    }
+
+    @Override
+    void beforeTest(TestDescriptor testDescriptor) {
+        gradle.println "beforeTest:=====${testDescriptor.className} ${testDescriptor.name}====="
+    }
+
+    @Override
+    void afterTest(TestDescriptor testDescriptor, TestResult result) {
+        gradle.println "afterTest:=====${testDescriptor.className} ${testDescriptor.name} ${result}====="
+    }
+})
+//测试的输出监听,实际测试并没有回调
+gradle.addListener(new TestOutputListener() {
+    @Override
+    void onOutput(TestDescriptor testDescriptor, TestOutputEvent outputEvent) {
+        gradle.println "onOutput:=====${testDescriptor} ${outputEvent}====="
+        gradle.println "message:${outputEvent.message}"
+        gradle.println "destination:${outputEvent.destination}"
+    }
+})
+
+
+
+//useLogger传入的参数可以实现任何一个addListener方法传入的参数的接口
+//这些接口有
+//org.gradle.BuildListener
+//org.gradle.api.execution.TaskExecutionGraphListener
+//org.gradle.api.ProjectEvaluationListener
+//org.gradle.api.execution.TaskExecutionListener
+//org.gradle.api.execution.TaskActionListener
+//org.gradle.api.logging.StandardOutputListener
+//org.gradle.api.tasks.testing.TestListener
+//org.gradle.api.tasks.testing.TestOutputListener
+//org.gradle.api.artifacts.DependencyResolutionListener
+//一旦调用了useLogger方法,默认的gradle事件的日志会被替换,也就是会被替换成我们自定义的日志输出
+gradle.useLogger(new CustomEventLogger())
+
+//自定义的log输出
+class CustomEventLogger implements BuildListener, TaskExecutionListener {
+    @Override
+    void buildStarted(Gradle gradle) {
+        println "buildStarted"
+    }
+
+    @Override
+    void settingsEvaluated(Settings settings) {
+        println "settingsEvaluated"
+    }
+
+    @Override
+    void projectsLoaded(Gradle gradle) {
+        println "projectsLoaded"
+    }
+
+    @Override
+    void projectsEvaluated(Gradle gradle) {
+        println "projectsEvaluated"
+    }
+
+    public void beforeExecute(Task task) {
+        println "beforeExecute:[$task.name]"
+    }
+
+    public void afterExecute(Task task, TaskState state) {
+        println "afterExecute:[$task.name]"
+    }
+
+    public void buildFinished(BuildResult result) {
+        println 'buildFinished'
+        if (result.failure != null) {
+            result.failure.printStackTrace()
+        }
+    }
+}
+
+
+//init.gralde可以配置一些全局的配置，比如仓库的地址等
+
+import java.util.concurrent.TimeUnit
+allprojects { Project project ->
+    buildscript {
+        repositories {
+            maven {
+                url "htttp://url/to/maven"
+            }
+            jcenter()
+            mavenCentral()
+            mavenLocal()
+        }
+    }
+    repositories {
+        maven {
+            url "htttp://url/to/maven"
+        }
+        jcenter()
+        mavenCentral()
+        mavenLocal()
+    }
+    configurations.all {
+        resolutionStrategy {
+            // cache dynamic versions for 10 minutes
+            cacheDynamicVersionsFor 10 * 60, TimeUnit.SECONDS
+            // don't cache changing modules at all
+            cacheChangingModulesFor 0, TimeUnit.SECONDS
+        }
+    }
+}
+
+//如果需要在init.gradle中引入第三方库，可以使用initscript指定仓库地址和对应的依赖
+//比如使用apache的commons-math库进行计算1/5 * 2的值
+//下面的脚步会输出2/5
+import org.apache.commons.math.fraction.Fraction
+
+initscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.apache.commons:commons-math:2.0'
+    }
+}
+println Fraction.ONE_FIFTH.multiply(2)
+
+
+//对于一些仓库的全局定义，也可以使用插件的方式定义，如
+
+
+apply plugin: EnterpriseRepositoryPlugin
+
+class EnterpriseRepositoryPlugin implements Plugin<Gradle> {
+    private static String REPOSITORY_URL = "htttp://url/to/maven"
+
+    void apply(Gradle gradle) {
+        gradle.allprojects { project ->
+            project.buildscript {
+                repositories {
+                    maven {
+                        url REPOSITORY_URL
+                    }
+                    jcenter()
+                    mavenCentral()
+                    mavenLocal()
+                }
+                dependencies {
+                    //可以定义全局的android gradle插件
+                    classpath 'com.android.tools.build:gradle:2.1.2'
+                }
+            }
+            project.repositories {
+                maven {
+                    url REPOSITORY_URL
+                }
+                jcenter()
+                mavenCentral()
+                mavenLocal()
+            }
+            project.configurations.all {
+                resolutionStrategy {
+                    // cache dynamic versions for 10 minutes
+                    cacheDynamicVersionsFor 10 * 60, TimeUnit.SECONDS
+                    // don't cache changing modules at all
+                    cacheChangingModulesFor 0, TimeUnit.SECONDS
+                }
+            }
+        }
+    }
+}
+
