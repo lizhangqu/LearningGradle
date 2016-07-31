@@ -339,3 +339,36 @@ class CustomEventLogger implements BuildListener, TaskExecutionListener {
         }
     }
 }
+
+
+//init.gralde可以配置一些全局的配置，比如仓库的地址等
+
+import java.util.concurrent.TimeUnit
+allprojects { Project project ->
+    buildscript {
+        repositories {
+            maven {
+                url "htttp://url/to/maven"
+            }
+            jcenter()
+            mavenCentral()
+            mavenLocal()
+        }
+    }
+    repositories {
+        maven {
+            url "htttp://url/to/maven"
+        }
+        jcenter()
+        mavenCentral()
+        mavenLocal()
+    }
+    configurations.all {
+        resolutionStrategy {
+            // cache dynamic versions for 10 minutes
+            cacheDynamicVersionsFor 10 * 60, TimeUnit.SECONDS
+            // don't cache changing modules at all
+            cacheChangingModulesFor 0, TimeUnit.SECONDS
+        }
+    }
+}
