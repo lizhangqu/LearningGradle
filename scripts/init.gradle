@@ -1,5 +1,22 @@
+//init.gradle的作用
+//建立企业内部的配置,如定义在哪里可以找到自定义插件
+//属性配置,比如配置持续集成服务器的地址等配置。
+//提供构建需要的用户的个人信息,如仓库或数据库的身份验证凭证。
+//定义机器的一些细节,比如jdk安装在什么位置。
+//注册一些监听器。比如注册监听器，监听Gradle事件的发生，做一些额外的操作，例如日志的重定向。
+//注册日志。这样我们就可以自定义如何输出gradle产生的日志信息。
+
+//加载优先级,依次加载以下目录下的文件，如果一个目录下多个文件被找到，按照英文字母顺序执行
+//1.通过 -I 或者 --init-script 参数指定路径
+//2.加载USER_HOME/.gradle/init.gradle文件
+//3.加载USER_HOME/.gradle/init.d/目录下的以.gradle结尾的文件
+//4.加载GRADLE_HOME/init.d/目录下的以.gradle结尾的文件
+
+
+//命令行加载方式
 // gradle --init-script init.gradle assembleDebug
 // gradle --I init.gradle assembleDebug
+
 
 //gradle的可执行目录
 gradle.println "gradleHomeDir:${gradle.gradleHomeDir}"
