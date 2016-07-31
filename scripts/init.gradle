@@ -1,3 +1,6 @@
+// gradle --init-script init.gradle assembleDebug
+// gradle --I init.gradle assembleDebug
+
 //gradle的可执行目录
 gradle.println "gradleHomeDir:${gradle.gradleHomeDir}"
 //gradle的用户目录,用于缓存一些下载好的资源,编译好的构建脚本等
