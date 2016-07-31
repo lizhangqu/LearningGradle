@@ -226,3 +226,37 @@ gradle.addListener(new TaskActionListener() {
         }
     }
 })
+
+
+
+//测试监听器
+gradle.addListener(new TestListener() {
+    @Override
+    void beforeSuite(TestDescriptor suite) {
+        gradle.println "beforeSuite:=====${suite.className} ${suite.name}====="
+    }
+
+    @Override
+    void afterSuite(TestDescriptor suite, TestResult result) {
+        gradle.println "afterSuite:=====${suite.className} ${suite.name} ${result}====="
+    }
+
+    @Override
+    void beforeTest(TestDescriptor testDescriptor) {
+        gradle.println "beforeTest:=====${testDescriptor.className} ${testDescriptor.name}====="
+    }
+
+    @Override
+    void afterTest(TestDescriptor testDescriptor, TestResult result) {
+        gradle.println "afterTest:=====${testDescriptor.className} ${testDescriptor.name} ${result}====="
+    }
+})
+//测试的输出监听,实际测试并没有回调
+gradle.addListener(new TestOutputListener() {
+    @Override
+    void onOutput(TestDescriptor testDescriptor, TestOutputEvent outputEvent) {
+        gradle.println "onOutput:=====${testDescriptor} ${outputEvent}====="
+        gradle.println "message:${outputEvent.message}"
+        gradle.println "destination:${outputEvent.destination}"
+    }
+})
