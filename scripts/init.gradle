@@ -1,166 +1,189 @@
-// ./gradlew --init-script init.gradle clean
+//gradle的可执行目录
+gradle.println "gradleHomeDir:${gradle.gradleHomeDir}"
+//gradle的用户目录,用于缓存一些下载好的资源,编译好的构建脚本等
+gradle.println "gradleUserHomeDir:${gradle.gradleUserHomeDir}"
+//gradle的版本号
+gradle.println "gradleVersion:${gradle.gradleVersion}"
+//gralde当前构建的启动参数
+gradle.println "startParameter:${gradle.startParameter}"
 
-gradle.addBuildListener(new BuildListener() {
-    @Override
-    void buildStarted(Gradle gradle) {
-        gradle.println "buildStarted ${gradle}"
-    }
-
-    @Override
-    void settingsEvaluated(Settings settings) {
-        gradle.println "settingsEvaluated ${settings}"
-    }
-
-    @Override
-    void projectsLoaded(Gradle gradle) {
-        gradle.println "projectsLoaded ${gradle}"
-    }
-
-    /**
-     * 配置阶段结束
-     * @param gradle The build which has been evaluated. Never null.
-     */
-    @Override
-    void projectsEvaluated(Gradle gradle) {
-        gradle.println "projectsEvaluated ${gradle}"
-    }
-
-    /**
-     * 构建结束时调用
-     * @param result The result of the build. Never null.
-     */
-    @Override
-    void buildFinished(BuildResult result) {
-        gradle.println "buildFinished result=>${result.failure == null}"
-    }
-})
-
-gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
-    @Override
-    void beforeEvaluate(Project project) {
-        gradle.println "beforeEvaluate ${project}"
-
-    }
-
-    @Override
-    void afterEvaluate(Project project, ProjectState state) {
-        gradle.println "afterEvaluate ${project} ${state}"
-
-    }
-})
-
-gradle.println "${gradle.gradleHomeDir}"
-gradle.println "${gradle.gradleUserHomeDir}"
-gradle.println "${gradle.gradleVersion}"
-gradle.println "${gradle.startParameter}"
-gradle.println "${gradle.taskGraph}"
-
-
-gradle.buildStarted {
-    gradle.println "=====buildStarted====="
+//当前构建的任务依赖关系图
+gradle.taskGraph.whenReady {
+    TaskExecutionGraph taskGraph ->
+        taskGraph.allTasks.each {
+            Task task ->
+                gradle.println "=========whenReady:taskGraph:${task.getName()}========="
+        }
+        taskGraph.beforeTask {
+            Task task ->
+                gradle.println "=========whenReady:beforeTask:${task.getName()}========="
+        }
+        taskGraph.afterTask {
+            Task task ->
+                gradle.println "=========whenReady:afterTask:${task.getName()}========="
+        }
 }
-gradle.buildFinished {
-    gradle.println "=====buildFinished====="
-}
-gradle.beforeProject {
-    gradle.println "=====beforeProject====="
-}
-gradle.afterProject {
-    gradle.println "=====afterProject====="
-}
-gradle.projectsEvaluated {
-    gradle.println "=====projectsEvaluated====="
-}
-gradle.projectsLoaded {
-    gradle.println "=====projectsLoaded====="
-}
-gradle.settingsEvaluated {
-    gradle.println "=====settingsEvaluated====="
-}
-
-gradle.addListener(new TaskExecutionGraphListener() {
-
+//等同于上面的whenReady闭包中的内容
+gradle.taskGraph.addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
     @Override
     void graphPopulated(TaskExecutionGraph graph) {
-        gradle.println "=====${graph}====="
+        gradle.println "=========TaskExecutionGraphListener:graphPopulated========="
+        graph.allTasks.each {
+            Task task ->
+                gradle.println "=========TaskExecutionGraph:${task.getName()}========="
+        }
     }
 })
-
-gradle.addListener(new TaskExecutionListener() {
-
+//等同于上面的whenReady闭包中的内容
+gradle.taskGraph.addTaskExecutionListener(new TaskExecutionListener() {
     @Override
     void beforeExecute(Task task) {
-        gradle.println "beforeExecute:=====${task}====="
+        gradle.println "=========TaskExecutionListener:beforeExecute:${task.getName()}========="
+
     }
 
     @Override
     void afterExecute(Task task, TaskState state) {
-        gradle.println "afterExecute:=====${task} ${state}====="
-
+        gradle.println "=========TaskExecutionListener:afterExecute:${task.getName()}========="
+        gradle.println "=========TaskState:[executed]${state.executed}========="
+        gradle.println "=========TaskState:[didWork]${state.didWork}========="
+        gradle.println "=========TaskState:[failure]${state.failure}========="
+        gradle.println "=========TaskState:[skipMessage]${state.skipMessage}========="
+        gradle.println "=========TaskState:[skipped]${state.skipped}========="
+        gradle.println "=========TaskState:[upToDate]${state.upToDate}========="
     }
 })
 
-gradle.addListener(new TaskActionListener() {
-
+//构建监听
+gradle.addBuildListener(new BuildListener() {
     @Override
-    void beforeActions(Task task) {
-        gradle.println "beforeActions:=====${task}====="
+    void buildStarted(Gradle gradle) {
+        //init.gradle被执行前,构建已经发生,且buildStarted已经被回调,
+        // 因此后续加入的BuildListener都不会再调用buildStarted
+        gradle.println("=========BuildListener:buildStarted=========")
     }
 
     @Override
-    void afterActions(Task task) {
-        gradle.println "afterActions:=====${task}====="
-    }
-})
-
-
-gradle.addListener(new TestListener() {
-
-    @Override
-    void beforeSuite(TestDescriptor suite) {
-        gradle.println "beforeSuite:=====${suite}====="
-
+    void settingsEvaluated(Settings settings) {
+        //setting.gradle加载和评估配置阶段完成
+        gradle.println("=========BuildListener:settingsEvaluated=========")
     }
 
     @Override
-    void afterSuite(TestDescriptor suite, TestResult result) {
-        gradle.println "afterSuite:=====${suite} ${result}====="
-
+    void projectsLoaded(Gradle gradle) {
+        //项目加载完成
+        gradle.println("=========BuildListener:projectsLoaded=========")
     }
 
     @Override
-    void beforeTest(TestDescriptor testDescriptor) {
-        gradle.println "beforeTest:=====${testDescriptor}====="
-
+    void projectsEvaluated(Gradle gradle) {
+        //项目评估配置阶段结束
+        gradle.println("=========BuildListener:projectsEvaluated=========")
     }
 
     @Override
-    void afterTest(TestDescriptor testDescriptor, TestResult result) {
-        gradle.println "afterTest:=====${testDescriptor} ${result}====="
+    void buildFinished(BuildResult result) {
+        //构建完成
+        gradle.println("=========BuildListener:buildFinished=========")
     }
 })
 
+//配置评估监听
+gradle.addProjectEvaluationListener(new ProjectEvaluationListener() {
+    @Override
+    void beforeEvaluate(Project project) {
+        //项目配置评估前回调
+        gradle.println("=========ProjectEvaluationListener:beforeEvaluate ${project.getName()}=========")
+    }
+
+    @Override
+    void afterEvaluate(Project project, ProjectState state) {
+        //项目配置评估后回调
+        //如果失败,则failure不为null
+        gradle.println("=========ProjectEvaluationListener:afterEvaluate ${state.executed} ${state.failure}=========")
+    }
+})
+
+/**
+ * 同上BuildListener和ProjectEvaluationListener
+ */
+gradle.buildStarted {
+    gradle.println "=========buildStarted========="
+}
+gradle.settingsEvaluated {
+    gradle.println "=========settingsEvaluated========="
+}
+gradle.projectsLoaded {
+    gradle.println "=========projectsLoaded========="
+}
+gradle.projectsEvaluated {
+    gradle.println "=========projectsEvaluated========="
+}
+gradle.buildFinished {
+    gradle.println "=========buildFinished========="
+}
+gradle.beforeProject {
+    gradle.println "=========beforeProject========="
+}
+gradle.afterProject {
+    gradle.println "=========afterProject========="
+}
+
+/**
+ * 一系列的Listener
+ */
+
+//等同gradle.taskGraph.addTaskExecutionGraphListener
+gradle.addListener(new TaskExecutionGraphListener() {
+    @Override
+    void graphPopulated(TaskExecutionGraph graph) {
+        gradle.println "=========from gradle.addListener graphPopulated========="
+        graph.allTasks.each {
+            Task task ->
+                gradle.println "=========TaskExecutionGraph:${task.getName()}========="
+        }
+    }
+})
+//等同gradle.taskGraph.addTaskExecutionListener
+gradle.addListener(new TaskExecutionListener() {
+    @Override
+    void beforeExecute(Task task) {
+        gradle.println "=========from gradle.addListener beforeExecute========="
+        gradle.println "=========TaskExecutionListener:beforeExecute:${task.getName()}========="
+    }
+
+    @Override
+    void afterExecute(Task task, TaskState state) {
+        gradle.println "=========from gradle.addListener afterExecute========="
+        gradle.println "=========TaskExecutionListener:afterExecute:${task.getName()}========="
+        gradle.println "=========TaskState:[executed]${state.executed}========="
+        gradle.println "=========TaskState:[didWork]${state.didWork}========="
+        gradle.println "=========TaskState:[failure]${state.failure}========="
+        gradle.println "=========TaskState:[skipMessage]${state.skipMessage}========="
+        gradle.println "=========TaskState:[skipped]${state.skipped}========="
+        gradle.println "=========TaskState:[upToDate]${state.upToDate}========="
+    }
+})
+
+//依赖监听
 gradle.addListener(new DependencyResolutionListener() {
 
     @Override
     void beforeResolve(ResolvableDependencies dependencies) {
-        gradle.println "beforeResolve:=====${dependencies}====="
-
+        gradle.println "DependencyResolutionListener:beforeResolve:=====${dependencies}====="
     }
 
     @Override
     void afterResolve(ResolvableDependencies dependencies) {
-        gradle.println "afterResolve:=====${dependencies}====="
+        gradle.println "DependencyResolutionListener:afterResolve:=====${dependencies}====="
     }
 })
 
-
-
-
+//log输出的监听,可以将log输出到其他文件中去
 gradle.addListener(new StandardOutputListener() {
     static File logFile = new File("log.txt");
     static {
-        if (logFile.exists()){
+        if (logFile.exists()) {
             logFile.delete()
         }
         logFile.createNewFile()
@@ -177,13 +200,26 @@ gradle.addListener(new StandardOutputListener() {
         }
     }
 })
-gradle.addListener(new TestOutputListener() {
+
+//TaskAction监听器,Task.doFirst,Task.doLast等传入的闭包都是Action
+gradle.addListener(new TaskActionListener() {
+    @Override
+    void beforeActions(Task task) {
+        //在所有action执行前回调
+        gradle.println "**********beforeActions:${task}**********"
+        task.getActions().each {
+            Action action ->
+                gradle.println "**********${action}**********"
+        }
+    }
 
     @Override
-    void onOutput(TestDescriptor testDescriptor, TestOutputEvent outputEvent) {
-        gradle.println "onOutput:=====${testDescriptor} ${outputEvent}====="
-
+    void afterActions(Task task) {
+        //在所有action执行后回调
+        gradle.println "**********afterActions:${task}**********"
+        task.getActions().each {
+            Action action ->
+                gradle.println "**********${action}**********"
+        }
     }
 })
-
-
